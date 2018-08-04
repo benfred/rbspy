@@ -29,16 +29,23 @@ use std;
  */
 pub fn initialize(pid: pid_t) -> Result<StackTraceGetter<ProcessHandle>, Error> {
     let version = get_ruby_version_retry(pid).context("Couldn't determine Ruby version")?;
-    let is_maybe_thread = is_maybe_thread_function(&version);
-
     debug!("version: {}", version);
+
+    let current_thread_addr_location: usize;
+    #[cfg(target_os="linux")]
+    {
+        let is_maybe_thread = is_maybe_thread_function(&version);
+        current_thread_addr_location = address_finder::current_thread_address(pid, &version, is_maybe_thread)?
+    }
+
+    #[cfg(target_os="macos")]
+    {
+        current_thread_addr_location = address_finder::current_thread_address(pid, &version)?
+    }
+
     Ok(StackTraceGetter {
         process: Process{pid: Some(pid), source: pid.try_into_process_handle()?},
-        current_thread_addr_location: address_finder::current_thread_address(
-            pid,
-            &version,
-            is_maybe_thread,
-        )?,
+        current_thread_addr_location,
         stack_trace_function: get_stack_trace_function(&version),
     })
 }
@@ -200,6 +207,7 @@ fn test_get_disallowed_process() {
     process.kill().unwrap();
 }
 
+#[cfg(target_os="linux")]
 fn is_maybe_thread_function<T: 'static>(
     version: &str,
 ) -> Box<Fn(usize, usize, T, &Vec<MapRange>) -> bool>

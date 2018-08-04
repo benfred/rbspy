@@ -37,9 +37,7 @@ mod os_impl {
 
     pub fn current_thread_address(
         pid: pid_t,
-        version: &str,
-        _is_maybe_thread: Box<Fn(usize, usize, ProcessHandle, &Vec<MapRange>) -> bool>,
-    ) -> Result<usize, Error> {
+        version: &str) -> Result<usize, Error> {
         let proginfo = &get_program_info(pid)?;
         if version >= "2.5.0" {
             proginfo.symbol_addr("_ruby_current_execution_context_ptr")
