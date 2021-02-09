@@ -24,6 +24,8 @@ jobs:
       if: runner.os == 'Linux'
     - name: Build
       run: cargo build --release --verbose --examples
+    - name: ruby info
+      run: ruby -v
     - name: Test
       id: test
       run: cargo test --release
