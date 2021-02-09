@@ -1,0 +1,71 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - v*
+  pull_request:
+    branches: [ master ]
+    
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: sudo apt install libunwind-dev
+      if: runner.os == 'Linux'
+    - name: Build
+      run: cargo build --release --verbose --examples
+    - name: Test
+      id: test
+      run: cargo test --release
+    - name: Upload binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: binaries
+        path: target/*/release/rbspy
+      if: runner.os != 'Linux'
+
+  build-linux-cross:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [i686-musl, armv7-musleabihf, aarch64-musl, x86_64-musl]
+    container:
+      image: docker://benfred/rust-musl-cross:${{ matrix.target }}
+      env:
+        RUSTUP_HOME: /root/.rustup
+        CARGO_HOME: /root/.cargo
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cargo build --release
+    - name: Upload Binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: binaries
+        path: target/*/release/rbspy
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
+    needs: [build-linux-cross, build]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels
+      - name: Create GitHub Release
+        uses: fnkr/github-action-ghr@v1.3
+        env:
+          GHR_PATH: .
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
