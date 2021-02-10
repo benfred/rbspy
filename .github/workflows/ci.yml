@@ -71,7 +71,7 @@ jobs:
           echo "====="
         fi
         set -x
-      if: runner.os != "Windows"
+      if: runner.os != 'Windows'
 
     - name: Run tests
       run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }}
