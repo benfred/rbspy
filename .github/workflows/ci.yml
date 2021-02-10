@@ -26,6 +26,7 @@ jobs:
         build:
         - linux
         - macos
+        - windows
         include:
         - build: linux
           os: ubuntu-20.04
