@@ -33,6 +33,9 @@ jobs:
         - build: macos
           os: macos-latest
           rust: stable
+        - build: windows
+          os: windows-latest
+          rust: stable
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -68,6 +71,7 @@ jobs:
           echo "====="
         fi
         set -x
+      if: runner.os != "Windows"
 
     - name: Run tests
       run: ${{ env.CARGO }} test --verbose --all ${{ env.TARGET_FLAGS }}
@@ -95,7 +99,7 @@ jobs:
     - name: Upload Binaries
       uses: actions/upload-artifact@v2
       with:
-        name: binaries
+        name: linux_binaries
         path: target/*/release/rbspy
 
 
